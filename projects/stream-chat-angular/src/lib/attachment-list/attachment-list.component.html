@@ -10,6 +10,7 @@
     "
   >
     <img
+      style="height: 300px"
       *ngIf="isImage(attachment)"
       class="str-chat__message-attachment--img"
       data-testclass="image"
@@ -50,6 +51,7 @@
         class="str-chat__message-attachment-card--header"
       >
         <img
+          style="height: 300px"
           data-testclass="card-img"
           alt="{{ attachment.image_url || attachment.thumb_url }}"
           src="{{ attachment.image_url || attachment.thumb_url }}"

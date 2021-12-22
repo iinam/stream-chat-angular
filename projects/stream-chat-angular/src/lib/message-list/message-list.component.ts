@@ -50,6 +50,7 @@ export class MessageListComponent implements AfterViewChecked, OnChanges {
   private isNewMessageSentByUser: boolean | undefined;
   private authorizedMessageActions: MessageActions[] = ['flag'];
   private readonly isUserScrolledUpThreshold = 300;
+  private jumpToMessageId: string | undefined;
 
   constructor(
     private channelService: ChannelService,
@@ -136,15 +137,18 @@ export class MessageListComponent implements AfterViewChecked, OnChanges {
             )?.id)
       )
     );
-    this.imageLoadService.imageLoad$.subscribe(() => {
-      if (!this.isUserScrolledUp) {
-        this.scrollToBottom();
-        // Hacky and unreliable workaround to scroll down after loaded images move the scrollbar
-        setTimeout(() => {
-          this.scrollToBottom();
-        }, 300);
-      }
-    });
+    // this.imageLoadService.imageLoad$.subscribe(() => {
+    //   if (!this.isUserScrolledUp) {
+    //     this.scrollToBottom();
+    //     // Hacky and unreliable workaround to scroll down after loaded images move the scrollbar
+    //     setTimeout(() => {
+    //       this.scrollToBottom();
+    //     }, 300);
+    //   }
+    // });
+    this.channelService.jumpToMessageId$.subscribe(
+      (id) => (this.jumpToMessageId = id)
+    );
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -154,6 +158,13 @@ export class MessageListComponent implements AfterViewChecked, OnChanges {
   }
 
   ngAfterViewChecked() {
+    if (this.jumpToMessageId) {
+      document
+        .getElementById(this.jumpToMessageId)
+        ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      this.jumpToMessageId = undefined;
+      return;
+    }
     if (this.hasNewMessages) {
       if (!this.isUserScrolledUp || this.isNewMessageSentByUser) {
         this.scrollToBottom();
@@ -176,6 +187,7 @@ export class MessageListComponent implements AfterViewChecked, OnChanges {
   }
 
   scrollToBottom(): void {
+    this.channelService.loadMessageIntoState('latest');
     this.scrollContainer.nativeElement.scrollTop =
       this.scrollContainer.nativeElement.scrollHeight;
   }
@@ -192,6 +204,12 @@ export class MessageListComponent implements AfterViewChecked, OnChanges {
     if (this.scrollContainer.nativeElement.scrollTop === 0) {
       this.containerHeight = this.scrollContainer.nativeElement.scrollHeight;
       void this.channelService.loadMoreMessages();
+    } else if (
+      this.scrollContainer.nativeElement.scrollHeight -
+        this.scrollContainer.nativeElement.scrollTop ===
+      this.scrollContainer.nativeElement.clientHeight
+    ) {
+      void this.channelService.loadMoreMessages('newer');
     }
   }
 

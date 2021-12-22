@@ -14,6 +14,7 @@
           trackBy: trackByMessageId
         "
         class="str-chat__li str-chat__li--{{ groupStyles[i] }}"
+        id="{{ message.id }}"
       >
         <ng-container *ngIf="messageTemplate; else defaultMessageTemplate">
           <ng-container

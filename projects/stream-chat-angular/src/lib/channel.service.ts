@@ -16,6 +16,7 @@ import {
 import { ChatClientService, Notification } from './chat-client.service';
 import { createMessagePreview } from './message-preview';
 import { MessageReactionType } from './message-reactions/message-reactions.component';
+import { NotificationService } from './notification.service';
 import { getReadBy } from './read-by';
 import { AttachmentUpload, StreamMessage } from './types';
 
@@ -27,6 +28,7 @@ export class ChannelService {
   channels$: Observable<Channel[] | undefined>;
   activeChannel$: Observable<Channel | undefined>;
   activeChannelMessages$: Observable<StreamMessage[]>;
+  jumpToMessageId$: Observable<string>;
   customNewMessageNotificationHandler?: (
     notification: Notification,
     channelListSetter: (channels: Channel[]) => void
@@ -84,6 +86,7 @@ export class ChannelService {
   private activeChannelMessagesSubject = new BehaviorSubject<
     (StreamMessage | MessageResponse | FormatMessageResponse)[]
   >([]);
+  private jumpToMessageIdSubject = new ReplaySubject<string>(1);
   private hasMoreChannelsSubject = new ReplaySubject<boolean>(1);
   private activeChannelSubscriptions: { unsubscribe: () => void }[] = [];
   private filters: ChannelFilters | undefined;
@@ -100,7 +103,8 @@ export class ChannelService {
 
   constructor(
     private chatClientService: ChatClientService,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private notificationService: NotificationService
   ) {
     this.channels$ = this.channelsSubject.asObservable();
     this.activeChannel$ = this.activeChannelSubject.asObservable();
@@ -126,6 +130,7 @@ export class ChannelService {
       })
     );
     this.hasMoreChannels$ = this.hasMoreChannelsSubject.asObservable();
+    this.jumpToMessageId$ = this.jumpToMessageIdSubject;
   }
 
   setAsActiveChannel(channel: Channel) {
@@ -142,11 +147,16 @@ export class ChannelService {
     this.activeChannelMessagesSubject.next([...channel.state.messages]);
   }
 
-  async loadMoreMessages() {
+  async loadMoreMessages(direction: 'older' | 'newer' = 'older') {
     const activeChnannel = this.activeChannelSubject.getValue();
-    const lastMessageId = this.activeChannelMessagesSubject.getValue()[0]?.id;
+    const messages = this.activeChannelMessagesSubject.getValue();
+    const lastMessageId =
+      messages[direction === 'older' ? 0 : messages.length - 1]?.id;
     await activeChnannel?.query({
-      messages: { limit: 25, id_lt: lastMessageId },
+      messages: {
+        limit: 25,
+        [direction === 'older' ? 'id_lt' : 'id_gt']: lastMessageId,
+      },
       members: { limit: 0 },
       watchers: { limit: 0 },
     });
@@ -293,6 +303,29 @@ export class ChannelService {
         id: { $ne: this.chatClientService.chatClient.userID! },
       });
       return Object.values(result.members);
+    }
+  }
+
+  async loadMessageIntoState(messageId: string, parentMessageId?: string) {
+    const activeChannel = this.activeChannelSubject.getValue();
+    try {
+      await activeChannel?.state.loadMessageIntoState(
+        messageId,
+        parentMessageId
+      );
+      this.activeChannelMessagesSubject.next([
+        ...(activeChannel?.state.messages || []),
+      ]);
+      this.jumpToMessageIdSubject.next(parentMessageId || messageId);
+      console.log(
+        activeChannel?.state.threads[parentMessageId || ''],
+        activeChannel?.state.threads[parentMessageId || '']?.find(
+          (m) => m.id === messageId
+        )
+      );
+    } catch (error) {
+      console.error(error);
+      this.notificationService.addTemporaryNotification('Message not found');
     }
   }
 

@@ -61,4 +61,8 @@ export class ChannelListComponent implements AfterViewInit {
   channelSelected() {
     this.channelListToggleService.channelSelected();
   }
+
+  loadMessageIntoState(messageId: string, parentMessageId?: string) {
+    this.channelService.loadMessageIntoState(messageId, parentMessageId);
+  }
 }

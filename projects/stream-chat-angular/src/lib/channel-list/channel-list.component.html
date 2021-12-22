@@ -4,6 +4,23 @@
   class="str-chat str-chat-channel-list messaging"
   [class.str-chat-channel-list--open]="(isOpen$ | async) === true"
 >
+  <div>
+    <input #messageInput type="text" placeholder="Message ID or 'latest'" />
+    <br />
+    <input
+      #parentMessageInput
+      type="text"
+      placeholder="Parent message ID (optional)"
+    />
+    <br />
+    <button
+      (click)="
+        loadMessageIntoState(messageInput.value, parentMessageInput.value)
+      "
+    >
+      Search
+    </button>
+  </div>
   <div
     *ngIf="
       (isError$ | async) === false && (isInitializing$ | async) === false;
