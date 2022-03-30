@@ -2,7 +2,9 @@
   <stream-channel-list></stream-channel-list>
   <stream-channel>
     <stream-channel-header></stream-channel-header>
-    <stream-message-list></stream-message-list>
+    <stream-message-list
+      [messageTemplate]="customMessagetemplate"
+    ></stream-message-list>
     <stream-notification-list></stream-notification-list>
     <stream-message-input
       [emojiPickerTemplate]="emojiPickerTemplate"
@@ -22,8 +24,29 @@
 </div>
 
 <!-- To use custom message, add this input to stream-message-list: [messageTemplate]="customMessagetemplate"-->
-<ng-template #customMessagetemplate let-message="message">
-  <app-custom-message [message]="message"></app-custom-message>
+<ng-template
+  #customMessagetemplate
+  let-message="message"
+  let-areReactionsEnabled="areReactionsEnabled"
+  let-canReactToMessage="canReactToMessage"
+  let-isLastSentMessage="isLastSentMessage"
+  let-enabledMessageActions="enabledMessageActions"
+  let-canReceiveReadEvents="canReceiveReadEvents"
+  let-messageInputTemplate="messageInputTemplate"
+  let-mentionTemplate="mentionTemplate"
+  let-mode="mode"
+>
+  <app-custom-message
+    [message]="message"
+    [areReactionsEnabled]="areReactionsEnabled"
+    [canReactToMessage]="canReactToMessage"
+    [isLastSentMessage]="isLastSentMessage"
+    [enabledMessageActions]="enabledMessageActions"
+    [canReceiveReadEvents]="canReceiveReadEvents"
+    [messageInputTemplate]="messageInputTemplate"
+    [mentionTemplate]="mentionTemplate"
+    [mode]="mode"
+  ></app-custom-message>
 </ng-template>
 
 <!-- To use custom template for mention autocomplete list item, add this input to stream-message-input: [mentionAutocompleteItemTemplate]="mentionTemplate""-->
