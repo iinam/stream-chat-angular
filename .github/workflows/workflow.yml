@@ -11,7 +11,7 @@ on:
       - beta
       - theming-v2
 jobs:
-  test:
+  workflow:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -58,6 +58,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npx semantic-release
+      - name: Pull stream-chat-css
+        uses: actions/checkout@v3
+        with:
+          repository: GetStream/stream-chat-css
+          path: stream-chat-css
+          ref: ${{ node -e 'pkg=require("./package.json"); console.log(pkg.dependencies["@stream-io/stream-chat-css"])' }}
+      - name: Copy docs from stream-chat-css
+        env:
+          DOCS_SOURCE: stream-chat-css/docs
+        run: npm run copy-css-docs
       - name: Generate docs
         run: |
           npm run generate-docs
